@@ -87,3 +87,24 @@ exception_handler machine_check, 18, 0
 exception_handler smd_exception, 19, 0
 exception_handler virtual_exception, 20, 0
 exception_handler time, 0x20,  0     //关联到了芯片IRQ0的位置，也就是start
+
+
+    // simple_switch(&from,to)
+    .text
+    .global simple_switch
+simple_switch:
+    mov 4(%esp),%eax
+    mov 8(%esp),%edx
+    push %ebp
+    push %ebx
+    push %esi
+    push %edi
+    mov %esp,(%eax)
+
+    mov %edx,%esp
+    pop %edi
+    pop %esi
+    pop %ebx
+    pop %ebp
+
+    ret

@@ -4,9 +4,11 @@
 
 #include "comm/types.h"
 
-void init_gdt(void);
-void cpu_init(void);
-void segment_desc_init(int selector, uint32_t base, uint32_t limit, uint16_t attr);
+#define EFLAGS_DEFAULT     (1 << 1) //固定为1的位
+#define EFLAGS_IF          (1 << 9) //中断标志位,不能把中断全都关了
+
+
+
 
 #pragma pack(1)// byte alignment没有任何填充字节。
 typedef struct _segment_desc_t{// 16 bytes
@@ -16,6 +18,19 @@ typedef struct _segment_desc_t{// 16 bytes
     uint16_t attr;
     uint8_t base31_24;
 }segment_desc_t;
+
+/**
+ * tss描述符,
+ */
+typedef struct _tss_t { //help 任务切换 
+    uint32_t pre_link;
+    uint32_t esp0, ss0, esp1, ss1, esp2, ss2;
+    uint32_t cr3;
+    uint32_t eip, eflags, eax, ecx, edx, ebx, esp, ebp, esi, edi;
+    uint32_t es, cs, ss, ds, fs, gs;//段寄存器
+    uint32_t ldt;
+    uint32_t iomap;
+}tss_t;
 
 #pragma pack()// restore default alignment
 
@@ -29,7 +44,7 @@ typedef struct _gate_desc_t {
 	uint16_t attr;
 	uint16_t offset31_16;
 }gate_desc_t;
-void gate_desc_set(gate_desc_t * desc, uint16_t selector, uint32_t offset, uint16_t attr) ;
+
 
 #define SEG_G				(1 << 15)		// 设置段界限的单位，1-4KB，0-字节
 #define SEG_D				(1 << 14)		// 控制是否是32位、16位的代码或数据段
@@ -59,4 +74,17 @@ void gate_desc_set(gate_desc_t * desc, uint16_t selector, uint32_t offset, uint1
 
 #define EFLAGS_IF           (1 << 9)
 #define EFLAGS_DEFAULT      (1 << 1)
+
+
+void init_gdt(void);
+void cpu_init(void);
+void segment_desc_init(int selector, uint32_t base, uint32_t limit, uint16_t attr);
+void gate_desc_set(gate_desc_t * desc, uint16_t selector, uint32_t offset, uint16_t attr) ;
+int gdt_alloc_desc();//分配一个新的描述符
+void switch_to_tss(int tss_sel);
+
+void segment_desc_set(int selector, uint32_t base, uint32_t limit, uint16_t attr);
+
+
+
 #endif

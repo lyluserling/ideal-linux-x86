@@ -3,12 +3,15 @@
 #include "cpu/irq.h"
 #include "comm/cpu_instr.h"
 #include "os_cfg.h"
-
+#include "core/task.h"
 static uint32_t sys_tick;
 
 void do_handler_time (exception_frame_t *frame){
     sys_tick++;
     pic_send_eoi(IRQ0_TIMER); //send end of interrupt signal to PIC
+    task_time_tick();//这个要放在pic_send_eoi之后，因为pic_send_eoi会修改中断状态
+   // log_printf(" ******************enter irq******************* ");//任务1
+    
 }
 
 void init_pit(void){

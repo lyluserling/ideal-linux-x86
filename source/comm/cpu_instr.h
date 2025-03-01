@@ -1,7 +1,7 @@
 #ifndef CPU_INSTR_H
 #define CPU_INSTR_H
 
-#include "types.h"
+#include "comm/types.h"
 
 //读端口
 static inline uint8_t inb(uint16_t port) { 
@@ -95,6 +95,20 @@ static inline void far_jump(uint16_t sel, uint32_t offset){//远跳转 offse会�
 
 static inline void hlt(void){
     __asm__ __volatile__("hlt");
+}
+
+static inline void write_tr(uint16_t tss_sel){//写任务状态段选择子
+    __asm__ __volatile__("ltr %%ax" ::"a"(tss_sel));//用汇编指令ltr将任务状态段选择子写入TR寄存器。
+}
+
+static inline uint32_t read_eflags(void){
+    uint32_t eflags;
+    __asm__ __volatile__("pushf\n\t pop %%eax":"=a"(eflags));
+    return eflags;
+}
+
+static inline uint32_t write_eflags(uint32_t eflags){
+    __asm__ __volatile__("push %%eax\n\t popf" ::"a"(eflags));
 }
 
 #endif

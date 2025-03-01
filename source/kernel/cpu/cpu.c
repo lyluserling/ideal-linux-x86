@@ -1,7 +1,11 @@
 #include "cpu/cpu.h"
 #include "os_cfg.h"
 #include "comm/cpu_instr.h"
+#include "cpu/irq.h"
+#include "ipc/mutex.h"
+
 static segment_desc_t gdt_table[GDT_TABLE_SIZE];
+static mutex_t mutex;
 
 void segment_desc_set(int selector, uint32_t base, uint32_t limit, uint16_t attr){
     segment_desc_t * desc = gdt_table + (selector >> 3);
@@ -28,6 +32,25 @@ void gate_desc_set(gate_desc_t * desc, uint16_t selector, uint32_t offset, uint1
 	desc->offset31_16 = (offset >> 16) & 0xffff;
 }
 
+int gdt_alloc_desc(){//分配一个空闲的GDT描述符(static segment_desc_t gdt_table[GDT_TABLE_SIZE];)
+//irq_state_t state = irq_enter_protection();
+
+    mutex_lock(&mutex);
+    for(int i = 1;i < GDT_TABLE_SIZE; i++){
+        //如果该描述符没有被使用
+        segment_desc_t * desc = gdt_table + i;//
+        if(desc->attr == 0){
+//            irq_leave_protection(state);    
+            mutex_unlock(&mutex);
+            return i * sizeof(segment_desc_t);//索引*描述符大小=选择子
+        }
+    }
+    mutex_unlock(&mutex);
+//    irq_leave_protection(state);    
+    return -1;
+}
+
+
 /**
  * 初始化GDT
  */
@@ -51,5 +74,10 @@ void init_gdt(void) {
 }
 
     void cpu_init(void){
+        mutex_init(&mutex);
         init_gdt();
     }
+
+void switch_to_tss (int tss_sel){
+    far_jump(tss_sel,0);
+}

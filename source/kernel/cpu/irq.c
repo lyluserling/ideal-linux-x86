@@ -2,11 +2,36 @@
 #include "cpu/cpu.h"
 #include "comm/cpu_instr.h"
 #include "os_cfg.h"
+#include "tools/log.h"
+#include "cpu/irq.h"
 #define IDT_TABLE_NR 128 //中断描述符表的长度
 //进入保护模式重新定义一个xxx表
 static gate_desc_t idt_table[IDT_TABLE_NR];
 
+static void dump_core_regs(exception_frame_t * frame){
+
+	log_printf("IRQ: %d, error code: %d.", frame->num, frame->err_code);
+    log_printf("CS: %d\nDS: %d\nES: %d\nSS: %d\nFS:%d\nGS:%d",
+               frame->cs, frame->ds, frame->es,  frame->fs, frame->gs
+    );
+     log_printf("EAX:0x%x\n"
+                "EBX:0x%x\n"
+                "ECX:0x%x\n"
+                "EDX:0x%x\n"
+                "EDI:0x%x\n"
+                "ESI:0x%x\n"
+                "EBP:0x%x\n"
+                "ESP:0x%x\n",
+               frame->eax, frame->ebx, frame->ecx, frame->edx,
+               frame->edi, frame->esi, frame->ebp, frame->esp);
+    log_printf("EIP:0x%x\nEFLAGS:0x%x\n", frame->eip, frame->eflags);
+}
+
 static void do_default_handler(exception_frame_t * frame,const char *msg){
+	log_printf( "--------------------------------------------------------------------------");
+	log_printf("IRQ/Exception happend %s",msg);
+	dump_core_regs(frame);
+
     for(;;){
     hlt();
     }
@@ -221,7 +246,7 @@ void irq_disable_global(void) {
 }
 
 void irq_enable_global(void) {
-	sti();//关中断
+	sti();//开中断
 }
 void pic_send_eoi(int irq_num){
 	irq_num -= IRQ_PIC_START;
@@ -229,8 +254,15 @@ void pic_send_eoi(int irq_num){
 		outb(PIC1_OCW2,PIC_OCW2_EOI); //发送EOI信号
 	}
 
-    
 		outb(PIC0_OCW2,PIC_OCW2_EOI); //发送EOI信号
-	
 
+}
+
+irq_state_t irq_enter_protection(void){
+	irq_state_t state = read_eflags();//获取当前的eflags寄存器的值(irq_state)
+	irq_disable_global();
+	return state;
+	}
+void irq_leave_protection(irq_state_t state){
+	write_eflags(state);//恢复eflags寄存器的值(irq_state)
 }
