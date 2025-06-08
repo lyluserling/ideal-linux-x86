@@ -47,7 +47,18 @@ static task_t init_task;
         //sys_sched_yield();//释放cpu资源，让其他任务运行
   }
  }
+/**
+ * @brief 移至第一个进程运行
+ */
+void move_to_first_task(void) {
+    task_t * curr_task = task_current();
+    ASSERT(curr != 0);
 
+    tss_t * tss = &(curr->tss);
+    __asm__ __volatile__(
+        "jmp 8%[ip]"::[ip]"r"(tss->eip)
+    )
+}
 
 void init_main(void) {
   //list_test();
@@ -56,32 +67,36 @@ void init_main(void) {
   log_printf("version %s %s",OS_VERSION,"shabi");
   log_printf("%d %d %x %c",-123456,123456,0x12345,'c');//%x表示以16进制输出
 
+    // 初始化任务
+    task_first_init();
+    move_to_first_task();
    
-  task_init(&init_task,(uint32_t)init_task_entry,(uint32_t)&init_task_stack[1024],"init task");//栈顶指针（高地址到低地址寻找的）
-  task_first_init();
-  // task_init(&first_task,0,0);//空任务
-  // write_tr(first_task.tss_sel);//这个的选择子放在first_task的tss_sel中
+//   task_init(&init_task,(uint32_t)init_task_entry,(uint32_t)&init_task_stack[1024],"init task");//栈顶指针（高地址到低地址寻找的）
+//   task_first_init();
+//   // task_init(&first_task,0,0);//空任务
+//   // write_tr(first_task.tss_sel);//这个的选择子放在first_task的tss_sel中
 
-  sem_init(&sem,0);
-  //如果只执行了first main，可能由于中断的原因，导致任务切换失败， 因此需要开启全局中断
-  irq_enable_global();//开启全局中断
+//   sem_init(&sem,0);
+//   //如果只执行了first main，可能由于中断的原因，导致任务切换失败， 因此需要开启全局中断
+//   irq_enable_global();//开启全局中断
  
-  int count = 0;
-  // int a = 3 / 0;
-  //irq_enable_global();//开启全局中断
- // printf("%s %d","a",10);
-  for(;;){
-         log_printf("first main:%d",count++);//任务1
-        //sem_notify(&sem);
-        //sys_sleep(1000);
-        //log_printf("init_task slice_ticks: %d", curr_task->slice_ticks);
+//   int count = 0;
+//   // cout << "hello world" << endl;
+//   // int a = 3 / 0;
+//   //irq_enable_global();//开启全局中断
+//  // printf("%s %d","a",10);
+//   for(;;){
+//          log_printf("first main:%d",count++);//任务1
+//         //sem_notify(&sem);
+//         //sys_sleep(1000);
+//         //log_printf("init_task slice_ticks: %d", curr_task->slice_ticks);
        
 
-        //task_switch(task_first_task,&init_task);
-        //sys_sched_yield();
-  }
+//         //task_switch(task_first_task,&init_task);
+//         //sys_sched_yield();
+//   }
 
-  //init_task_entry();//任务2
+//   //init_task_entry();//任务2
 }
 
 

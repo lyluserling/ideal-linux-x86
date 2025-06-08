@@ -5,6 +5,7 @@
 #include "tools/log.h"
 #include "comm/cpu_instr.h"
 #include "cpu/irq.h"
+#include "cpu/mmu.h"
 
 static uint32_t idle_task_stack[IDLE_TASK_STACK_SIZE];//空闲任务栈
 
@@ -70,10 +71,14 @@ void  task_switch (task_t * from, task_t * to){
 }
 
 void task_first_init(void){
-      task_init(&task_manager.first_task,0,0,"first task");//空任务
-      write_tr(task_manager.first_task.tss_sel);//这个的选择子放在first_task的tss_sel中,初始化完成后
-      log_printf("first_task_init slice_ticks: %d", task_manager.first_task.slice_ticks);
-      task_manager.curr_task = &task_manager.first_task;
+    void first_task_entry(void);
+    uint32_t first_start = (uint32_t)first_task_entry;
+    task_init(&task_manager.first_task,0,0,"first task");//空任务
+    write_tr(task_manager.first_task.tss_sel);//这个的选择子放在first_task的tss_sel中,初始化完成后
+    log_printf("first_task_init slice_ticks: %d", task_manager.first_task.slice_ticks);
+    task_manager.curr_task = &task_manager.first_task;
+
+    mmu_set_page_dir(task_manager.first_task.tss.cr3);//设置页目录
 }
 
 

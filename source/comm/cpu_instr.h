@@ -86,6 +86,25 @@ static inline void write_cr0(uint32_t cr0) {
 }
 
 
+static inline uint16_t read_cr3(void) {
+    uint32_t cr3;
+    __asm__ __volatile__("mov %%cr3, %[v]" : [v] "=r" (cr3));//将 CR0 寄存器的值移动到指定的操作数 [v] 中,%%cr0 使用了双百分号 (%%) 来转义，这样编译器不会将其视为 C 语言中的格式字符串。具体的寄存器不指定，用[v]表示。
+    return cr3;
+}
+static inline void write_cr3(uint32_t cr3) {
+    __asm__ __volatile__("mov %[v], %%cr3" :: [v] "r" (cr3));
+}
+
+
+static inline uint16_t read_cr4(void) {
+    uint32_t cr4;
+    __asm__ __volatile__("mov %%cr4, %[v]" : [v] "=r" (cr4));//将 CR0 寄存器的值移动到指定的操作数 [v] 中,%%cr0 使用了双百分号 (%%) 来转义，这样编译器不会将其视为 C 语言中的格式字符串。具体的寄存器不指定，用[v]表示。
+    return cr4;
+}
+static inline void write_cr4(uint32_t cr4) {
+    __asm__ __volatile__("mov %[v], %%cr4" :: [v] "r" (cr4));
+}
+
 
 static inline void far_jump(uint16_t sel, uint32_t offset){//远跳转 offse会被设置为start.S里面protected_mode_entry函数的地址
     uint32_t addr[] = {offset, sel};

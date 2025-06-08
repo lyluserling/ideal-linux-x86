@@ -23,6 +23,13 @@ void kernel_itoa(int num, char *str, int base);
 void kernel_sprintf(char * buffer, const char * fmt, ...);
 
 void kernel_vsprintf(char * buffer, const char * fmt, va_list args);
+static inline uint32_t down2(uint32_t size,uint32_t bound){
+    return size & ~(bound-1);//返回size按bound对齐的下界
+}
+
+static inline uint32_t up2(uint32_t size,uint32_t bound){
+    return (size + bound - 1) & ~(bound - 1);//返回size按bound对齐的上界
+}
 
 // #ifndef RELEASE
 // #define ASSERT(expr)   \

@@ -8,13 +8,13 @@ void bitmap_init(bitmap_t * bitmap, uint8_t * bits, int bitcount , int init_bit)
     bitmap->bitcount = bitcount;
     
     int bytes = bitmap_byte_count(bitmap->bitcount);//计算需要多少字节
-    kernel_memset(bitmap->bits,init_bit ? 0xff : 0, bytes);//
+    kernel_memset(bitmap->bits,init_bit ? 0xff : 0, bytes);//初始化字节数组   
 }
 
 int bitmap_get_bit(bitmap_t * bitmap, int index){
     return (bitmap->bits[index/8] & (1<<(index%8)))? 1 : 0;; //bitmap->bits[index/8]表示第index/8个字节，& (1<<(index%8))表示第index%8位是否为1，代码当前的返回值是一个 int，但是返回的可能是一个 非零整数（即按位与后的结果），而不一定是 0 或 1。
  }
-void bitmap_set_bit(bitmap_t * bitmap, int index, int count, int bit){
+void bitmap_set_bit(bitmap_t * bitmap, int index, int count, int bit){//从index开始，设置count个位的状态值
     for(int i = 0;(i<count && index<bitmap->bitcount);i++,index++){
         if(bit == 1){
             bitmap->bits[index/8] |= (1<<(index%8));
@@ -30,15 +30,18 @@ int bitmap_is_set(bitmap_t * bitmap, int index){
 /**
  * @brief 连续分配若干指定比特位，返回起始索引
  */
-int bitmap_alloc_nbits (bitmap_t * bitmap, int bit, int count) {
-    int search_idx = 0;
-    int ok_idx = -1;
 
+// int search_idx = 0;
+int bitmap_alloc_nbits (bitmap_t * bitmap,  int bit, int count) {
+    static int search_idx = 0;
+    int ok_idx = -1;
+ 
     while (search_idx < bitmap->bitcount) {
+        log_printf("Checking bit at bitmap->bitcount  %d\n", bitmap->bitcount);
         // 定位到第一个相同的索引处
         if (bitmap_get_bit(bitmap, search_idx) != bit) {
             // 不同，继续寻找起始的bit
-            search_idx++
+            search_idx++;
             continue;
         }
 
@@ -48,7 +51,7 @@ int bitmap_alloc_nbits (bitmap_t * bitmap, int bit, int count) {
         // 继续计算下一部分
         int i;
         for (i = 1; (i < count) && (search_idx < bitmap->bitcount); i++) {
-            log_printf("Checking bit at search_idx  %d\n", search_idx);
+            log_printf("Checking bit at search_idx1  %d\n", search_idx);
             if (bitmap_get_bit(bitmap, search_idx) != bit) {
                 // 不足count个，退出，重新进行最外层的比较
                 search_idx++;
@@ -57,6 +60,7 @@ int bitmap_alloc_nbits (bitmap_t * bitmap, int bit, int count) {
                 break;
             }
             search_idx++;
+            log_printf("Checking bit at search_idx2  %d\n", search_idx);
         }
 
         // 找到，设置各位，然后退出

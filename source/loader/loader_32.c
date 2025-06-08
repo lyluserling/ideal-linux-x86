@@ -66,6 +66,25 @@ static void dile_error(char *msg){
     }
 }
 
+#define PDE_P  (1 << 0) // Present
+#define PDE_W  (1 << 1) // Writable
+#define PDE_PS (1 << 7) // Page size
+#define CR4_PSE   (1 << 4) // Page size extension
+#define CR0_PG    (1 << 31) // paging enable
+void enable_page_mode(void){
+    static uint32_t page_dir[1024] __attribute__((aligned(4096))) = {//
+        [0] = PDE_P |PDE_W | PDE_PS | 0
+    }; //高10位地址对表进行索引 页目录表
+    
+    uint32_t cr4 = read_cr4();
+    write_cr4(cr4 | CR4_PSE); //设置CR4的PSE位
+    
+    write_cr3((uint32_t)page_dir); //设置CR3的页目录表地址
+
+    write_cr0(read_cr0() | CR0_PG); 
+}
+
+
 void load_kernel(void){
     read_disk(100,500,(uint8_t *)SYS_KERNEL_ADDR);//将内核放在100扇区开始的地方(1M)，500个扇区大小
 
@@ -74,6 +93,7 @@ void load_kernel(void){
         dile_error("Invalid kernel file");
     }
 
+    enable_page_mode(); //开启分页机制
       ((void (*)(boot_info_t *))kernel_entry)(&boot_info);//跳转到内核入口地址
     for(;;){}
 }
